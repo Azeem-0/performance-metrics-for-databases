@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 use std::env;
 
-use mongodb::{results::InsertOneResult, Client, Collection};
+use mongodb::{bson::doc, results::InsertOneResult, Client, Collection};
 
 use crate::{
     models::{
@@ -13,7 +13,6 @@ use crate::{
 
 pub struct MongoDB {
     pub depth_history: Collection<DepthHistory>,
-    pub swaps_history: Collection<SwapsHistory>,
     pub rune_pule_history: Collection<RunePoolHistory>,
 }
 
@@ -44,20 +43,19 @@ impl MongoDB {
 
         let depth_history_collection: Collection<DepthHistory> = db.collection("depth_history");
 
-        let swaps_history_collection: Collection<SwapsHistory> = db.collection("swaps_history");
+        let _swaps_history_collection: Collection<SwapsHistory> = db.collection("swaps_history");
 
         let rune_pool_collection: Collection<RunePoolHistory> = db.collection("rune_pool_history");
 
         Ok(MongoDB {
             depth_history: depth_history_collection,
-            swaps_history: swaps_history_collection,
             rune_pule_history: rune_pool_collection,
         })
     }
 
     pub async fn insert_depth_history(
         &self,
-        depth_history: DepthHistory,
+        depth_history: &DepthHistory,
     ) -> Result<InsertOneResult> {
         let insert_result: InsertOneResult = self
             .depth_history
@@ -68,16 +66,44 @@ impl MongoDB {
         Ok(insert_result)
     }
 
-    pub async fn insert_swaps_history(
+    pub async fn insert_rune_pool_history(
         &self,
-        swaps_history: SwapsHistory,
+        rune_pool_history: &RunePoolHistory,
     ) -> Result<InsertOneResult> {
         let insert_result = self
-            .swaps_history
-            .insert_one(swaps_history)
+            .rune_pule_history
+            .insert_one(rune_pool_history)
             .await
-            .expect("Failed to insert swaps history");
+            .expect("Failed to insert Rune pool history");
 
         Ok(insert_result)
+    }
+
+    pub async fn read_depth_history(&self) -> Result<Vec<DepthHistory>> {
+        let mut cursor = self
+            .depth_history
+            .find(doc! {}) // Fetch all documents, no filters
+            .await
+            .expect("Failed to retrieve depth history documents.");
+
+        let mut results = Vec::new();
+        while cursor.advance().await.unwrap() {
+            results.push(cursor.deserialize_current().unwrap());
+        }
+        Ok(results)
+    }
+
+    pub async fn read_rune_pool_history(&self) -> Result<Vec<RunePoolHistory>> {
+        let mut cursor = self
+            .rune_pule_history
+            .find(doc! {}) // Fetch all documents, no filters
+            .await
+            .expect("Failed to retrieve depth history documents.");
+
+        let mut results = Vec::new();
+        while cursor.advance().await.unwrap() {
+            results.push(cursor.deserialize_current().unwrap());
+        }
+        Ok(results)
     }
 }

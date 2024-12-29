@@ -1,9 +1,8 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::sync::Arc;
 
-use axum::{body::HttpBody, response::IntoResponse, routing::get, Extension, Router};
+use axum::{routing::get, Extension, Router};
 use db::init_databases;
-use handlers::fetch_and_insert_data::fetch_and_insert_data;
-use utils::types::Result;
+use handlers::{fetch_and_insert_data::fetch_and_insert_data, read_data::read_data};
 
 mod db;
 mod handlers;
@@ -18,9 +17,8 @@ async fn get_router() -> Router {
 
     Router::new()
         .route("/", get(root))
-        .route("/fetch-data", get(fetch_and_insert_data))
-        // .route("/read-data-from-databases", todo!())
-        // .route("/find-data-from-databases", todo!())
+        .route("/fetch-and-insert-data", get(fetch_and_insert_data))
+        .route("/read-data", get(read_data))
         .layer(Extension(shared_database))
 }
 

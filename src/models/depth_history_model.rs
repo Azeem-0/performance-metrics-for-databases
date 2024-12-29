@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::deserialize_util::deserialize_string_to_number;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct DepthHistory {
     #[serde(deserialize_with = "deserialize_string_to_number")]
@@ -56,7 +56,8 @@ impl DepthHistory {
         camel_to_snake_fields.contains(field)
     }
 }
-#[derive(Debug, Serialize, Deserialize)]
+
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DepthHistoryMeta {
     #[serde(deserialize_with = "deserialize_string_to_number")]
@@ -91,7 +92,7 @@ pub struct DepthHistoryMeta {
     pub end_synth_units: f64,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DepthHistoryResponse {
     pub meta: DepthHistoryMeta,
