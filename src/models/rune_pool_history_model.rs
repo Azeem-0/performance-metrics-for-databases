@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::utils::deserialize_util::deserialize_string_to_number;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RunePoolHistory {
     #[serde(deserialize_with = "deserialize_string_to_number")]

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::utils::deserialize_util::deserialize_string_to_number;
 
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct DepthHistory {
     #[serde(deserialize_with = "deserialize_string_to_number")]

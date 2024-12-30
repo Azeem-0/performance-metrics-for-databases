@@ -1,4 +1,4 @@
-use std::{env, sync::Arc};
+use std::env;
 
 use dotenv::dotenv;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres, Row};
@@ -68,7 +68,7 @@ impl PostgreSQL {
                 start_time DOUBLE PRECISION NOT NULL,
                 end_time DOUBLE PRECISION NOT NULL,
                 count DOUBLE PRECISION NOT NULL,
-                units DOUBLE PRECISION NOT NULL,
+                units DOUBLE PRECISION NOT NULL
             )
             "#,
         )
@@ -158,13 +158,13 @@ impl PostgreSQL {
     pub async fn read_rune_pool_history(&self) -> Result<Vec<RunePoolHistory>> {
         let rows = sqlx::query(
             r#"
-                SELECT 
-                    start_time
-                    end_time
-                    count
-                    units
-                FROM rune_pool_history
-            "#,
+            SELECT 
+                start_time,
+                end_time,
+                count,
+                units
+            FROM rune_pool_history
+        "#,
         )
         .fetch_all(&self.pool)
         .await
