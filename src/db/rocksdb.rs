@@ -17,41 +17,10 @@ impl RocksDB {
         Ok(RocksDB { db })
     }
 
-    pub async fn insert_depth_history(&self, depth_history: &DepthHistory) -> Result<()> {
-        let key = serde_json::to_vec(&depth_history.start_time).map_err(|e| {
-            Error::DataBaseConnectionFailed(format!("Failed to serialize key in RocksDB: {:?}", e))
-        })?;
-        let val = serde_json::to_vec(depth_history).map_err(|e| {
-            Error::DataBaseConnectionFailed(format!(
-                "Failed to serialize value in RocksDB: {:?}",
-                e
-            ))
-        })?;
-
+    pub async fn insert_data(&self, key: Vec<u8>, val: Vec<u8>) -> Result<()> {
         self.db.put(key, val).map_err(|e| {
             Error::DataBaseInsertionFailed(format!(
                 "Failed to insert depth history in RocksDB: {:?}",
-                e
-            ))
-        })?;
-
-        Ok(())
-    }
-
-    pub async fn insert_rune_pool_history(
-        &self,
-        rune_pool_history: &RunePoolHistory,
-    ) -> Result<()> {
-        let key = serde_json::to_vec(&rune_pool_history.start_time).map_err(|e| {
-            Error::DataBaseInsertionFailed(format!("Failed to serialize key in RocksDB: {:?}", e))
-        })?;
-        let val = serde_json::to_vec(rune_pool_history).map_err(|e| {
-            Error::DataBaseInsertionFailed(format!("Failed to serialize value in RocksDB: {:?}", e))
-        })?;
-
-        self.db.put(key, val).map_err(|e| {
-            Error::DataBaseInsertionFailed(format!(
-                "Failed to insert rune pool history in RocksDB: {:?}",
                 e
             ))
         })?;

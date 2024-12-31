@@ -1,0 +1,22 @@
+WRITE OPERATIONS: 
+Time taken for MongoDB to insert depth history data (400 records):  0m 23s 299ms
+Time taken for Postgres to insert depth history data (400 records) :  0m 13s 639ms
+Time taken for SurrealDB to insert depth history data (400 records) :  1m 11s 77ms
+Time taken for LevelDB to insert depth history data (400 records) :  0m 2s 690ms
+Time taken for RocksDB to insert depth history data (400 records) :  0m 0s 10ms
+Time taken for MongoDB to insert rune pool history data (400 records) :  0m 22s 770ms
+Time taken for Postgres to insert rune pool history data (400 records) :  0m 13s 503ms
+Time taken for SurrealDB to insert rune pool history data (400 records) :  1m 10s 636ms
+Time taken for LevelDB to insert rune pool history data (400 records) :  0m 3s 161ms
+Time taken for LevelDB to insert rune pool history data (400 records) :  0m 0s 11ms
+
+READ OPERATIONS: 
+
+Time taken for MongoDB to read depth history data (400 records) :  0m 0s 342ms
+Time taken for MongoDB to read rune pool history data (400 records) :  0m 0s 138ms
+Time taken for Postgres to read depth history data (400 records) :  0m 0s 117ms
+Time taken for Postgres to read rune pool history data (400 records) :  0m 0s 148ms
+Time taken for SurrealDB to read depth history data (400 records) :  0m 0s 875ms
+Time taken for SurrealDB to read rune pool history data (400 records) :  0m 0s 190ms
+Time taken for RocksDB to read data (400 records) :  0m 0s 45ms
+Time taken for LevelDB to read data (400 records) :  0m 0s 269ms

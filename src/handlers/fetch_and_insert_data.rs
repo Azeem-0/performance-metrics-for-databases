@@ -2,8 +2,12 @@ use std::{sync::Arc, time::Instant};
 
 use crate::{
     db::{
-        leveldb::LevelDB, mongodb::MongoDB, postgres::PostgreSQL, rocksdb::RocksDB,
-        surrealdb::SurrealDBWrapper, DataBases,
+        leveldb::{self, LevelDB},
+        mongodb::MongoDB,
+        postgres::PostgreSQL,
+        rocksdb::RocksDB,
+        surrealdb::SurrealDBWrapper,
+        DataBases,
     },
     metrics::performance_metrics::performance_metrics,
     models::{
@@ -29,7 +33,7 @@ async fn insert_depth_history_into_mongodb(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for MongoDB to insert depth history data : ",
+        "Time taken for MongoDB to insert depth history data (400 records): ",
     );
 
     Ok(true)
@@ -51,7 +55,7 @@ async fn insert_rune_pool_history_into_mongodb(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for MongoDB to insert rune pool history data : ",
+        "Time taken for MongoDB to insert rune pool history data (400 records) : ",
     );
 
     Ok(true)
@@ -74,7 +78,7 @@ async fn insert_depth_history_into_postgres(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for Postgres to insert depth history data : ",
+        "Time taken for Postgres to insert depth history data (400 records) : ",
     );
 
     Ok(true)
@@ -97,7 +101,7 @@ async fn insert_rune_pool_history_into_postgres(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for Postgres to insert rune pool history data : ",
+        "Time taken for Postgres to insert rune pool history data (400 records) : ",
     );
 
     Ok(true)
@@ -120,7 +124,7 @@ async fn insert_depth_history_into_surrealdb(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for SurrealDB to insert depth history data : ",
+        "Time taken for SurrealDB to insert depth history data (400 records) : ",
     );
 
     Ok(true)
@@ -143,7 +147,7 @@ async fn insert_rune_pool_history_into_surrealdb(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for SurrealDB to insert rune pool history data : ",
+        "Time taken for SurrealDB to insert rune pool history data (400 records) : ",
     );
 
     Ok(true)
@@ -156,7 +160,20 @@ async fn insert_depth_history_into_leveldb(
     let start_time = Instant::now();
 
     for depth_history in &resp.intervals {
-        if let Err(err) = leveldb.insert_depth_history(depth_history).await {
+        let val = serde_json::to_vec(depth_history).map_err(|e| {
+            Error::DataBaseInsertionFailed(format!(
+                "Failed to serialize depth history for LevelDB: {:?}",
+                e
+            ))
+        })?;
+
+        let key = serde_json::to_vec(&depth_history.start_time).map_err(|e| {
+            Error::DataBaseInsertionFailed(format!(
+                "Failed to serialize key for LevelDB (start_time): {:?}",
+                e
+            ))
+        })?;
+        if let Err(err) = leveldb.insert_data(key, val).await {
             dbg!("Failed to insert depth history data into levelDB");
             return Err(err);
         }
@@ -166,7 +183,43 @@ async fn insert_depth_history_into_leveldb(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for LevelDB to insert depth history data : ",
+        "Time taken for LevelDB to insert depth history data (400 records) : ",
+    );
+
+    Ok(true)
+}
+
+async fn insert_rune_pool_history_into_leveldb(
+    leveldb: &LevelDB,
+    resp: &RunePoolHistoryResponse,
+) -> Result<bool> {
+    let start_time = Instant::now();
+
+    for rune_pool_history in &resp.intervals {
+        let val = serde_json::to_vec(rune_pool_history).map_err(|e| {
+            Error::DataBaseInsertionFailed(format!(
+                "Failed to serialize depth history for LevelDB: {:?}",
+                e
+            ))
+        })?;
+
+        let key = serde_json::to_vec(&rune_pool_history.start_time).map_err(|e| {
+            Error::DataBaseInsertionFailed(format!(
+                "Failed to serialize key for LevelDB (start_time): {:?}",
+                e
+            ))
+        })?;
+        if let Err(err) = leveldb.insert_data(key, val).await {
+            dbg!("Failed to insert Rune pool history data into surrealDB");
+            return Err(err);
+        }
+    }
+    let end_time = Instant::now();
+
+    performance_metrics(
+        start_time,
+        end_time,
+        "Time taken for LevelDB to insert rune pool history data (400 records) : ",
     );
 
     Ok(true)
@@ -179,7 +232,17 @@ async fn insert_depth_history_into_rocksdb(
     let start_time = Instant::now();
 
     for depth_history in &resp.intervals {
-        if let Err(err) = rocksdb.insert_depth_history(depth_history).await {
+        let key = serde_json::to_vec(&depth_history.start_time).map_err(|e| {
+            Error::DataBaseConnectionFailed(format!("Failed to serialize key in RocksDB: {:?}", e))
+        })?;
+        let val = serde_json::to_vec(depth_history).map_err(|e| {
+            Error::DataBaseConnectionFailed(format!(
+                "Failed to serialize value in RocksDB: {:?}",
+                e
+            ))
+        })?;
+
+        if let Err(err) = rocksdb.insert_data(key, val).await {
             dbg!("Failed to insert depth history data into rocksDB");
             return Err(err);
         }
@@ -189,11 +252,44 @@ async fn insert_depth_history_into_rocksdb(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for RocksDB to insert depth history data : ",
+        "Time taken for RocksDB to insert depth history data (400 records) : ",
     );
 
     Ok(true)
 }
+
+async fn insert_rune_pool_history_into_rocksdb(
+    rocksdb: &RocksDB,
+    resp: &RunePoolHistoryResponse,
+) -> Result<bool> {
+    let start_time = Instant::now();
+
+    for rune_pool_history in &resp.intervals {
+        let key = serde_json::to_vec(&rune_pool_history.start_time).map_err(|e| {
+            Error::DataBaseConnectionFailed(format!("Failed to serialize key in RocksDB: {:?}", e))
+        })?;
+        let val = serde_json::to_vec(rune_pool_history).map_err(|e| {
+            Error::DataBaseConnectionFailed(format!(
+                "Failed to serialize value in RocksDB: {:?}",
+                e
+            ))
+        })?;
+        if let Err(err) = rocksdb.insert_data(key, val).await {
+            dbg!("Failed to insert Rune pool history data into surrealDB");
+            return Err(err);
+        }
+    }
+    let end_time = Instant::now();
+
+    performance_metrics(
+        start_time,
+        end_time,
+        "Time taken for LevelDB to insert rune pool history data (400 records) : ",
+    );
+
+    Ok(true)
+}
+
 async fn insert_depth_history(
     mongodb: &MongoDB,
     postgres: &PostgreSQL,
@@ -249,8 +345,8 @@ async fn insert_rune_pool_history(
     mongodb: &MongoDB,
     postgres: &PostgreSQL,
     surrealdb: &SurrealDBWrapper,
-    _leveldb: &LevelDB,
-    _rocksdb: &RocksDB,
+    leveldb: &LevelDB,
+    rocksdb: &RocksDB,
 ) -> Result<bool> {
     let rune_pool_history_url =
         format!("https://midgard.ninerealms.com/v2/history/runepool?interval=hour&count=400");
@@ -267,6 +363,14 @@ async fn insert_rune_pool_history(
                 }
 
                 if let Err(err) = insert_rune_pool_history_into_surrealdb(&surrealdb, &resp).await {
+                    return Err(err);
+                }
+
+                if let Err(err) = insert_rune_pool_history_into_leveldb(&leveldb, &resp).await {
+                    return Err(err);
+                }
+
+                if let Err(err) = insert_rune_pool_history_into_rocksdb(&rocksdb, &resp).await {
                     return Err(err);
                 }
             }

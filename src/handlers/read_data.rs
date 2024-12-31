@@ -24,7 +24,7 @@ async fn read_data_from_mongodb(mongodb: &MongoDB) -> Result<bool> {
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for MongoDB to read depth history data : ",
+        "Time taken for MongoDB to read depth history data (400 records) : ",
     );
 
     // reading rune pool data...
@@ -37,7 +37,7 @@ async fn read_data_from_mongodb(mongodb: &MongoDB) -> Result<bool> {
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for MongoDB to read rune pool history data : ",
+        "Time taken for MongoDB to read rune pool history data (400 records) : ",
     );
 
     Ok(true)
@@ -54,7 +54,7 @@ pub async fn read_data_from_postgres(postgres: &PostgreSQL) -> Result<bool> {
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for Postgres to read depth history data : ",
+        "Time taken for Postgres to read depth history data (400 records) : ",
     );
 
     // reading rune pool history data...
@@ -67,7 +67,7 @@ pub async fn read_data_from_postgres(postgres: &PostgreSQL) -> Result<bool> {
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for Postgres to read rune pool history data : ",
+        "Time taken for Postgres to read rune pool history data (400 records) : ",
     );
 
     Ok(true)
@@ -83,7 +83,7 @@ pub async fn read_data_from_surrealdb(surrealdb: &SurrealDBWrapper) -> Result<bo
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for SurrealDB to read depth history data : ",
+        "Time taken for SurrealDB to read depth history data (400 records) : ",
     );
 
     // reading rune pool history data...
@@ -96,7 +96,7 @@ pub async fn read_data_from_surrealdb(surrealdb: &SurrealDBWrapper) -> Result<bo
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for SurrealDB to read rune pool history data : ",
+        "Time taken for SurrealDB to read rune pool history data (400 records) : ",
     );
 
     Ok(true)
@@ -112,7 +112,7 @@ pub async fn read_data_from_rocksdb(rocksdb: &RocksDB) -> Result<bool> {
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for RocksDB to read data : ",
+        "Time taken for RocksDB to read data (400 records) : ",
     );
 
     Ok(true)
@@ -128,7 +128,7 @@ pub async fn read_data_from_leveldb(leveldb: &LevelDB) -> Result<bool> {
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for LevelDB to read data : ",
+        "Time taken for LevelDB to read data (400 records) : ",
     );
 
     Ok(true)

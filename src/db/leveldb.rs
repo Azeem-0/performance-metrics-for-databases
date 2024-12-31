@@ -20,26 +20,9 @@ impl LevelDB {
         Ok(LevelDB { db: Arc::new(db) })
     }
 
-    pub async fn insert_depth_history(&self, depth_history: &DepthHistory) -> Result<()> {
-        let val = serde_json::to_vec(depth_history).map_err(|e| {
-            Error::DataBaseInsertionFailed(format!(
-                "Failed to serialize depth history for LevelDB: {:?}",
-                e
-            ))
-        })?;
-
-        let key = serde_json::to_vec(&depth_history.start_time).map_err(|e| {
-            Error::DataBaseInsertionFailed(format!(
-                "Failed to serialize key for LevelDB (start_time): {:?}",
-                e
-            ))
-        })?;
-
+    pub async fn insert_data(&self, key: Vec<u8>, val: Vec<u8>) -> Result<()> {
         self.db.put(key.clone(), val).await.map_err(|e| {
-            Error::DataBaseInsertionFailed(format!(
-                "Failed to insert depth history into LevelDB: {:?}",
-                e
-            ))
+            Error::DataBaseInsertionFailed(format!("Failed to insert data into LevelDB: {:?}", e))
         })?;
 
         let mut keys_index: Vec<Vec<u8>> = match self.db.get(b"_keys_index".to_vec()).await {
