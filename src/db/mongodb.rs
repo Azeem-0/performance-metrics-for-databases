@@ -4,10 +4,7 @@ use std::env;
 use mongodb::{bson::doc, results::InsertOneResult, Client, Collection};
 
 use crate::{
-    models::{
-        depth_history_model::DepthHistory, rune_pool_history_model::RunePoolHistory,
-        swaps_history_model::SwapsHistory,
-    },
+    models::{depth_history_model::DepthHistory, rune_pool_history_model::RunePoolHistory},
     utils::types::{Error, Result},
 };
 
@@ -42,8 +39,6 @@ impl MongoDB {
         let db = client.database("database_metrics");
 
         let depth_history_collection: Collection<DepthHistory> = db.collection("depth_history");
-
-        let _swaps_history_collection: Collection<SwapsHistory> = db.collection("swaps_history");
 
         let rune_pool_collection: Collection<RunePoolHistory> = db.collection("rune_pool_history");
 
@@ -82,7 +77,7 @@ impl MongoDB {
     pub async fn read_depth_history(&self) -> Result<Vec<DepthHistory>> {
         let mut cursor = self
             .depth_history
-            .find(doc! {}) // Fetch all documents, no filters
+            .find(doc! {})
             .await
             .expect("Failed to retrieve depth history documents.");
 
@@ -96,7 +91,7 @@ impl MongoDB {
     pub async fn read_rune_pool_history(&self) -> Result<Vec<RunePoolHistory>> {
         let mut cursor = self
             .rune_pule_history
-            .find(doc! {}) // Fetch all documents, no filters
+            .find(doc! {})
             .await
             .expect("Failed to retrieve depth history documents.");
 

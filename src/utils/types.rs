@@ -4,6 +4,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub enum Error {
     OperationFailed(String),
     DataBaseConnectionFailed(String),
-    DataBaseError(String),
+    DataBaseCreationFailed(String),
     DataBaseInsertionFailed(String),
+    DataBaseReadFailed(String),
 }

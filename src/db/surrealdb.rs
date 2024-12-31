@@ -4,7 +4,6 @@ use crate::utils::types::{Error, Result};
 use dotenv::dotenv;
 use std::env;
 use surrealdb::engine::any::{self, Any};
-use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 use surrealdb::{self};
@@ -21,14 +20,16 @@ impl SurrealDBWrapper {
             Ok(v) => v.to_string(),
             Err(_) => {
                 return Err(Error::DataBaseConnectionFailed(
-                    "Unable to read surreal db uri.".to_string(),
+                    "Unable to read SurrealDB URI.".to_string(),
                 ))
             }
         };
 
         let db = any::connect(surrealdb_url).await.map_err(|e| {
-            println!("{:?}", e);
-            Error::DataBaseConnectionFailed("Invalid database URL".to_string())
+            eprintln!("Error connecting to SurrealDB: {:?}", e);
+            Error::DataBaseConnectionFailed(
+                "Failed to connect to SurrealDB. Check the database URL.".to_string(),
+            )
         })?;
 
         db.signin(Root {
@@ -37,15 +38,24 @@ impl SurrealDBWrapper {
         })
         .await
         .map_err(|e| {
-            println!("{:?}", e);
-            Error::DataBaseConnectionFailed("Cannot log in as root user".to_string())
+            eprintln!("Error signing in to SurrealDB as root: {:?}", e);
+            Error::DataBaseConnectionFailed(
+                "Failed to log in as root user to SurrealDB.".to_string(),
+            )
         })?;
 
         db.use_ns("azeem-0")
             .use_db("database-metrics-testing")
             .await
             .map_err(|e| {
-                Error::DataBaseConnectionFailed("Unable to connect to the database".to_string())
+                eprintln!(
+                    "Error selecting namespace or database in SurrealDB: {:?}",
+                    e
+                );
+                Error::DataBaseConnectionFailed(
+                    "Unable to connect to the specified namespace or database in SurrealDB."
+                        .to_string(),
+                )
             })?;
 
         let surrealdb = SurrealDBWrapper { db };
@@ -60,8 +70,10 @@ impl SurrealDBWrapper {
             .content(depth_history.clone())
             .await
             .map_err(|e| {
-                eprintln!("Error inserting depth history: {:?}", e);
-                Error::DataBaseConnectionFailed("Insertion failed".to_string())
+                eprintln!("Error inserting depth history into SurrealDB: {:?}", e);
+                Error::DataBaseInsertionFailed(
+                    "Failed to insert depth history data into SurrealDB.".to_string(),
+                )
             })?;
 
         Ok(())
@@ -77,9 +89,9 @@ impl SurrealDBWrapper {
             .content(rune_pool_history.clone())
             .await
             .map_err(|e| {
-                eprintln!("Error inserting rune pool history into surreal db: {:?}", e);
-                Error::DataBaseConnectionFailed(
-                    "Insertion failed for rune pool data in surreal db".to_string(),
+                eprintln!("Error inserting rune pool history into SurrealDB: {:?}", e);
+                Error::DataBaseInsertionFailed(
+                    "Failed to insert rune pool history data into SurrealDB.".to_string(),
                 )
             })?;
 
@@ -90,27 +102,29 @@ impl SurrealDBWrapper {
         let depth_history: Vec<DepthHistory> =
             self.db.select("depth_history").await.map_err(|e| {
                 eprintln!(
-                    "Error retrieveing depth history history from surreal db: {:?}",
+                    "Error retrieving depth history data from SurrealDB: {:?}",
                     e
                 );
-                Error::DataBaseError(
-                    "Retrieval failed for depth history data in surreal db".to_string(),
+                Error::DataBaseReadFailed(
+                    "Failed to retrieve depth history data from SurrealDB.".to_string(),
                 )
             })?;
 
         Ok(depth_history)
     }
+
     pub async fn read_rune_pool_history(&self) -> Result<Vec<RunePoolHistory>> {
-        let depth_history: Vec<RunePoolHistory> =
+        let rune_pool_history: Vec<RunePoolHistory> =
             self.db.select("rune_pool_history").await.map_err(|e| {
                 eprintln!(
-                    "Error retrieveing rune pool history history from surreal db: {:?}",
+                    "Error retrieving rune pool history data from SurrealDB: {:?}",
                     e
                 );
-                Error::DataBaseError(
-                    "Retrieval failed for rune pool history data in surreal db".to_string(),
+                Error::DataBaseReadFailed(
+                    "Failed to retrieve rune pool history data from SurrealDB.".to_string(),
                 )
             })?;
-        Ok(depth_history)
+
+        Ok(rune_pool_history)
     }
 }

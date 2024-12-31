@@ -60,7 +60,7 @@ impl PostgreSQL {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| Error::DataBaseError(format!("Table creation failed: {}", e)))?;
+        .map_err(|e| Error::DataBaseCreationFailed(format!("Table creation failed: {}", e)))?;
 
         sqlx::query(
             r#"
@@ -75,7 +75,7 @@ impl PostgreSQL {
         .execute(&self.pool)
         .await
         .map_err(|e| {
-            Error::DataBaseError(format!("Rune pool history table creation failed: {}", e))
+            Error::DataBaseCreationFailed(format!("Rune pool history table creation failed: {}", e))
         })?;
 
         Ok(())
@@ -133,7 +133,7 @@ impl PostgreSQL {
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| Error::DataBaseError(format!("Failed to read depth history: {}", e)))?;
+        .map_err(|e| Error::DataBaseReadFailed(format!("Failed to read depth history: {}", e)))?;
         let records: Vec<DepthHistory> = rows
             .into_iter()
             .map(|row| DepthHistory {
@@ -168,7 +168,9 @@ impl PostgreSQL {
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| Error::DataBaseError(format!("Failed to read rune pool history: {}", e)))?;
+        .map_err(|e| {
+            Error::DataBaseReadFailed(format!("Failed to read rune pool history: {}", e))
+        })?;
 
         let records: Vec<RunePoolHistory> = rows
             .into_iter()

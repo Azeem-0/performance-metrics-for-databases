@@ -2,8 +2,8 @@ use std::{sync::Arc, time::Instant};
 
 use crate::{
     db::{
-        leveldb::LevelDB, mongodb::MongoDB, postgres::PostgreSQL, surrealdb::SurrealDBWrapper,
-        DataBases,
+        leveldb::LevelDB, mongodb::MongoDB, postgres::PostgreSQL, rocksdb::RocksDB,
+        surrealdb::SurrealDBWrapper, DataBases,
     },
     metrics::performance_metrics::performance_metrics,
     models::{
@@ -82,7 +82,7 @@ async fn insert_depth_history_into_postgres(
 
 async fn insert_rune_pool_history_into_postgres(
     postgres: &PostgreSQL,
-    resp: RunePoolHistoryResponse,
+    resp: &RunePoolHistoryResponse,
 ) -> Result<bool> {
     let start_time = Instant::now();
 
@@ -172,15 +172,15 @@ async fn insert_depth_history_into_leveldb(
     Ok(true)
 }
 
-async fn insert_rune_pool_history_into_leveldb(
-    leveldb: &LevelDB,
-    resp: &RunePoolHistoryResponse,
+async fn insert_depth_history_into_rocksdb(
+    rocksdb: &RocksDB,
+    resp: &DepthHistoryResponse,
 ) -> Result<bool> {
     let start_time = Instant::now();
 
-    for rune_pool_history in &resp.intervals {
-        if let Err(err) = leveldb.insert_rune_pool_history(rune_pool_history).await {
-            dbg!("Failed to insert Rune pool history data into LevelDB");
+    for depth_history in &resp.intervals {
+        if let Err(err) = rocksdb.insert_depth_history(depth_history).await {
+            dbg!("Failed to insert depth history data into rocksDB");
             return Err(err);
         }
     }
@@ -189,7 +189,7 @@ async fn insert_rune_pool_history_into_leveldb(
     performance_metrics(
         start_time,
         end_time,
-        "Time taken for LevelDB to insert rune pool history data : ",
+        "Time taken for RocksDB to insert depth history data : ",
     );
 
     Ok(true)
@@ -199,6 +199,7 @@ async fn insert_depth_history(
     postgres: &PostgreSQL,
     surrealdb: &SurrealDBWrapper,
     leveldb: &LevelDB,
+    rocksdb: &RocksDB,
 ) -> Result<bool> {
     let depth_history_url =
         "https://midgard.ninerealms.com/v2/history/depths/BTC.BTC?interval=hour&count=400";
@@ -206,19 +207,23 @@ async fn insert_depth_history(
     match reqwest::get(depth_history_url).await {
         Ok(response) => match response.json::<DepthHistoryResponse>().await {
             Ok(resp) => {
-                // if let Err(err) = insert_depth_history_into_mongodb(mongodb, &resp).await {
-                //     return Err(err);
-                // }
+                if let Err(err) = insert_depth_history_into_mongodb(mongodb, &resp).await {
+                    return Err(err);
+                }
 
-                // if let Err(err) = insert_depth_history_into_postgres(postgres, &resp).await {
-                //     return Err(err);
-                // }
+                if let Err(err) = insert_depth_history_into_postgres(postgres, &resp).await {
+                    return Err(err);
+                }
 
-                // if let Err(err) = insert_depth_history_into_surrealdb(&surrealdb, &resp).await {
-                //     return Err(err);
-                // }
+                if let Err(err) = insert_depth_history_into_surrealdb(&surrealdb, &resp).await {
+                    return Err(err);
+                }
 
                 if let Err(err) = insert_depth_history_into_leveldb(leveldb, &resp).await {
+                    return Err(err);
+                }
+
+                if let Err(err) = insert_depth_history_into_rocksdb(rocksdb, &resp).await {
                     return Err(err);
                 }
             }
@@ -244,7 +249,8 @@ async fn insert_rune_pool_history(
     mongodb: &MongoDB,
     postgres: &PostgreSQL,
     surrealdb: &SurrealDBWrapper,
-    leveldb: &LevelDB,
+    _leveldb: &LevelDB,
+    _rocksdb: &RocksDB,
 ) -> Result<bool> {
     let rune_pool_history_url =
         format!("https://midgard.ninerealms.com/v2/history/runepool?interval=hour&count=400");
@@ -252,19 +258,15 @@ async fn insert_rune_pool_history(
     match reqwest::get(&rune_pool_history_url).await {
         Ok(response) => match response.json::<RunePoolHistoryResponse>().await {
             Ok(resp) => {
-                // if let Err(err) = insert_rune_pool_history_into_mongodb(mongodb, &resp).await {
-                //     return Err(err);
-                // }
+                if let Err(err) = insert_rune_pool_history_into_mongodb(mongodb, &resp).await {
+                    return Err(err);
+                }
 
-                // if let Err(err) = insert_rune_pool_history_into_postgres(postgres, resp).await {
-                //     return Err(err);
-                // }
+                if let Err(err) = insert_rune_pool_history_into_postgres(postgres, &resp).await {
+                    return Err(err);
+                }
 
-                // if let Err(err) = insert_rune_pool_history_into_surrealdb(&surrealdb, &resp).await {
-                //     return Err(err);
-                // }
-
-                if let Err(err) = insert_rune_pool_history_into_leveldb(&leveldb, &resp).await {
+                if let Err(err) = insert_rune_pool_history_into_surrealdb(&surrealdb, &resp).await {
                     return Err(err);
                 }
             }
@@ -293,8 +295,9 @@ pub async fn fetch_and_insert_data(
     let postgres = &database.postgres;
     let surrealdb = &database.surrealdb;
     let leveldb = &database.leveldb;
+    let rocksdb = &database.rocksdb;
 
-    if let Err(err) = insert_depth_history(mongodb, postgres, surrealdb, leveldb).await {
+    if let Err(err) = insert_depth_history(mongodb, postgres, surrealdb, leveldb, rocksdb).await {
         dbg!(err);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -303,7 +306,8 @@ pub async fn fetch_and_insert_data(
             .into_response();
     }
 
-    if let Err(err) = insert_rune_pool_history(mongodb, postgres, surrealdb, leveldb).await {
+    if let Err(err) = insert_rune_pool_history(mongodb, postgres, surrealdb, leveldb, rocksdb).await
+    {
         dbg!(err);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
